@@ -145,13 +145,27 @@ class ProfileApiView(APIView):
     def patch(self, request):
         data = request.data
 
-        if not validate_phone(data['phone']):
+        if not validate_phone(data.get('phone', '')):
             return Response({
                 "Error": 'Telefon raqam xato kiritildi',
                 'status': status.HTTP_400_BAD_REQUEST
             })
 
         user = request.user
+        if data['phone']:
+            user_ = CustomUser.objects.filter(phone=data['phone']).first()
+
+            if user.phone == data['phone']:
+                return Response({
+                    'Message': 'Bu sizning tel raqamingiz',
+                    'Status': status.HTTP_400_BAD_REQUEST
+                })
+
+            if user_ and user != user:
+                return Response({
+                    'Message': 'Bu telefon mavjud',
+                    'Status': status.HTTP_400_BAD_REQUEST
+                })
 
         user.name = data.get("name", user.name)
         user.phone = data.get('phone', user.phone)
