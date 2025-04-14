@@ -14,7 +14,7 @@ def validate_phone(phone):
     return False if len(str(phone)) != 12 or not isinstance(phone, int) or str(phone)[:3] != '998' else True
 
 def validate_password(password: str):
-    return len(password) < 6 or ' ' in password or not password.isalnum() or any(map(lambda x: x.isupper(), password))
+    return False if len(password) < 6 or ' ' in password or not password.isalnum()  else True
 
 
 class RegisterApiView(APIView):
@@ -174,6 +174,54 @@ class ProfileApiView(APIView):
             'Message': 'Modified',
             'Status': status.HTTP_200_OK
         })
+
+    def delete(self,  request):
+
+        user1 = request.user
+        user1.delete()
+        return Response({
+            'Message': 'deleted'
+        })
+
+
+class PasswordChangeApiView(APIView):
+    permission_classes = [IsAuthenticated,]
+    authentication_classes = [TokenAuthentication,]
+
+    def post(self, request):
+        data = request.data
+
+        if not validate_phone(data.get('phone', '')):
+            return Response({
+                "Error": 'Telefon raqam xato kiritildi',
+                'status': status.HTTP_400_BAD_REQUEST
+            })
+
+        user = request.user
+
+        if user.check_password(data['old']):
+
+            if not validate_password(data.get('new', '')):
+                return Response({
+                    'Message': 'Yangi parol validatsiyadan otmadi',
+                    'Status': status.HTTP_400_BAD_REQUEST
+                })
+
+            user.set_password(data['new'])
+            user.save()
+
+            return Response({
+                'Message': 'Successfully changed!',
+                'Status': status.HTTP_200_OK,
+            })
+
+        return Response({
+            'Message': 'No changed!',
+            'Status': status.HTTP_400_BAD_REQUEST,
+        })
+
+
+# or any(map(lambda x: x.isupper(), password))
 
 
 
