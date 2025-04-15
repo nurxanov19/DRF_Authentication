@@ -1,14 +1,16 @@
 from django.contrib.auth import authenticate
-from django.contrib.auth.password_validation import validate_password
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import CustomUser
+
+from django.contrib.auth.password_validation import validate_password as django_validate_password
 
 def validate_phone(phone):
     return False if len(str(phone)) != 12 or not isinstance(phone, int) or str(phone)[:3] != '998' else True
@@ -200,10 +202,11 @@ class PasswordChangeApiView(APIView):
         user = request.user
 
         if user.check_password(data['old']):
-
-            if not validate_password(data.get('new', '')):
+            try:
+                django_validate_password(data.get('new', ''))
+            except ValidationError as e:
                 return Response({
-                    'Message': 'Yangi parol validatsiyadan otmadi',
+                    'Message': str(e),
                     'Status': status.HTTP_400_BAD_REQUEST
                 })
 
@@ -222,6 +225,5 @@ class PasswordChangeApiView(APIView):
 
 
 # or any(map(lambda x: x.isupper(), password))
-
 
 
