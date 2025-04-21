@@ -38,6 +38,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):       #   PermissionsMixin
         }
 
 
+class OneTimePasswordModel(models.Model):
+    phone = models.CharField(max_length=100)
+    key = models.CharField(max_length=200)
 
+    is_expired = models.BooleanField(default=False)
+    is_confirmed = models.BooleanField(default=False)
+    tried = models.PositiveBigIntegerField(default=0)
 
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.tried > 3:
+            self.is_expired = True
+        super(OneTimePasswordModel, self).save(*args, **kwargs)
 

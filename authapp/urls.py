@@ -1,4 +1,5 @@
-from .views import RegisterApiView, LoginApiView, LogoutApiView, ProfileApiView, PasswordChangeApiView
+from .views import RegisterApiView, LoginApiView, LogoutApiView, ProfileApiView, PasswordChangeApiView, AuthOne, \
+    AuthTwo
 from django.urls import path
 
 urlpatterns = [
@@ -7,5 +8,7 @@ urlpatterns = [
     path('logout', LogoutApiView.as_view(), name='logout'),
     path('profile', ProfileApiView.as_view(), name='profile'),
     path('password-change', PasswordChangeApiView.as_view(), name='password-change'),
+    path('auth-one', AuthOne.as_view(), name='auth-one'),
+    path('auth-two', AuthTwo.as_view(), name='auth-two'),
 
 ]

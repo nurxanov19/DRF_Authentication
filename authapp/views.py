@@ -1,3 +1,9 @@
+import datetime
+import random
+import string
+import uuid
+from wsgiref.util import request_uri
+
 from django.contrib.auth import authenticate
 from django.shortcuts import render
 from rest_framework import status
@@ -8,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import CustomUser
+from .models import CustomUser, OneTimePasswordModel
 
 from django.contrib.auth.password_validation import validate_password as django_validate_password
 
@@ -23,17 +29,19 @@ class RegisterApiView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         print(data)
-        if 'phone' not in data or 'password' not in data:
+        if 'key' not in data or 'password' not in data:
             return Response({
                 'message': 'Password or name must be entered',
                 'status': status.HTTP_401_UNAUTHORIZED
             })
 
-        if len(str(data['phone'])) != 12 or not isinstance(data['phone'], int) or str(data['phone'])[:3] != '998':
-            return Response({
-                "Error": 'Telefon raqam xato kiritildi',
-                'status': status.HTTP_400_BAD_REQUEST
-            })
+        '''Kelayotgan data da key bo'lishi kerak'''
+
+        # if len(str(data['phone'])) != 12 or not isinstance(data['phone'], int) or str(data['phone'])[:3] != '998':
+        #     return Response({
+        #         "Error": 'Telefon raqam xato kiritildi',
+        #         'status': status.HTTP_400_BAD_REQUEST
+        #     })
 
         if len(data['password']) < 6 or ' ' in data['password'] or not data['password'].isalnum() \
                 or not any(x.isupper() for x in data['password']):  # any(map(lambda x: x.isupper(), data['password']))
@@ -42,7 +50,8 @@ class RegisterApiView(APIView):
                 'status': status.HTTP_400_BAD_REQUEST
             })
 
-        phone = CustomUser.objects.filter(phone=data['phone']).first()
+        otp = OneTimePasswordModel.objects.filter(key=data.get('key')).first()
+        phone = CustomUser.objects.filter(phone=otp.phone).first()
         if phone:
             return Response({
                 'message': 'This user already exist',
@@ -50,7 +59,7 @@ class RegisterApiView(APIView):
             })
 
         user_data = {
-            'phone': data['phone'],
+            'phone': otp.phone,
             'password': data['password'],
             'name': data.get('name', '')
         }
@@ -224,6 +233,79 @@ class PasswordChangeApiView(APIView):
         })
 
 
-# or any(map(lambda x: x.isupper(), password))
+class AuthOne(APIView):
+    def post(self, request):
+        data = request.data
+        phone = data.get('phone')
+
+        if not data['phone']:
+            return Response({
+                'Error':  "Ma'lumot xato"
+            })
+
+        if not validate_phone(data.get('phone', '')):
+            return Response({
+                "Error": 'Telefon raqam xato kiritildi'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        code = ''.join([str(random.randint(1, 999999))[-1]  for _ in range(6)])
+        int_ = string.digits
+        str_ = string.ascii_letters
+        letters = str(int_) + str_
+        #code = ''.join([str(letters[random.randint(0, len(letters)-1)]) for _ in range(6)])
+        print(code)
+        key = uuid.uuid4().__str__() + '=' + code
+
+        otp = OneTimePasswordModel.objects.create(phone=data.get('phone'), key=key)
+
+        return Response({
+            'OTP': code,
+            'token': otp.key
+        })
+
+
+class AuthTwo(APIView):
+    def post(self, request):
+        data = request.data
+
+        if not data.get('key') or not data.get('code'):
+            return Response({
+                'Message': 'Malumotlar xato kiritildi'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        otp = OneTimePasswordModel.objects.filter(key=data.get('key')).first()
+
+        if not otp:
+            return Response({
+                'Message': 'Bunday foydalanuvchi topilmadi, Key Xato'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        if (now - otp.created).total_seconds() >= 180:
+            otp.is_expired = True
+            otp.save()
+            return Response({'Message': 'Key yaroqsiz'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp.is_confirmed:
+            return Response({'Message': 'Key eskirgan'})
+
+        if otp.is_expired:
+            return Response({'Error': 'Key expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if data['code'] != data['key'][-6:]:
+            otp.tried += 1
+            otp.save()
+            return Response({'Error': 'Xato kod kiritildi'}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp.is_confirmed = True
+        otp.save()
+
+        user = CustomUser.objects.filter(phone=otp.phone).first()
+        otp = OneTimePasswordModel.objects.filter(phone=otp.phone).first()
+
+        return Response({
+            'Registered': user is not None
+        }, status=status.HTTP_200_OK)
 
 

@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'rest_framework',   # DRF ni yurgazib beradigan asosiy ilova. Aynan shu ilova sababli, Serializer, Viewset, Genericview va interface lar ishalydi
     'rest_framework.authtoken',     # Token modelini avtomatik yaratadi va har bir foydalanuvchi uchun token yaratib, modelga saqlab ketadi
                                     # TokenAuthentication sinfini ishlashini taminlab beradi
+    #'django.contrib.staticfiles',  # required for serving swagger ui's css/js files
+    'drf_yasg',
 
 ]
 
