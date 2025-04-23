@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from django.conf.global_settings import AUTH_USER_MODEL
@@ -160,6 +161,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'authapp.CustomUser'
+
+APP_NAME = 'drf translate'      # DRF malumot yuborayotganini bildiradi | bir qancha dasturlash tillaridan foydalanilganda, malumot DRF dan kelayotganini bildiradi
 
 
 

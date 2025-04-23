@@ -17,6 +17,16 @@ from rest_framework.response import Response
 from .models import CustomUser, OneTimePasswordModel
 
 from django.contrib.auth.password_validation import validate_password as django_validate_password
+from methodism import METHODISM
+from authapp import methods
+
+
+class Main(METHODISM):
+    file = methods
+    token_key = 'Token'
+    not_auth_methods = ['register', 'login']
+
+
 
 def validate_phone(phone):
     return False if len(str(phone)) != 12 or not isinstance(phone, int) or str(phone)[:3] != '998' else True
