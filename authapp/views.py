@@ -182,7 +182,7 @@ class ProfileApiView(APIView):
                     'Status': status.HTTP_400_BAD_REQUEST
                 })
 
-            if user_ and user != user:
+            if user_ and user_ != user:
                 return Response({
                     'Message': 'Bu telefon mavjud',
                     'Status': status.HTTP_400_BAD_REQUEST

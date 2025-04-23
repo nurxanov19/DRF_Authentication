@@ -72,4 +72,36 @@ def logout(request, params):
         return custom_response(True, message=MESSAGE['LogedOut'])
 
 
+def get_profile_api(request, params):
+    user = request.user
+    return custom_response(True, data = {'data': user.format()}, message={'Success': 'User malumotlari'})
 
+
+def update_profile_api(request, params):
+
+    if len(str(params['phone'])) != 12 or not isinstance(params['phone'], int) or str(params['phone'])[:3] != '998':
+        return custom_response(False, message={'Error': "Telefon xato"})
+
+    user = request.user
+
+    if params['phone']:
+        user_ = CustomUser.objects.filter(phone=params['phone']).first()
+
+        if user_ and user_ != user:
+            return custom_response(False, message={'Error': "Ushbu raqamdan allaqachon foydalanilgan"})
+
+        if user.phone == params['phone']:
+            return custom_response(False, message={'Error': 'Bu sizning raqamingiz'})
+
+    user.phone = params.get('phone', user.phone)
+    user.name = params.get('name', user.name)
+    user.save()
+    return custom_response(True, message={'Success': 'Malumotlar Muvaffaqiyatli Ozgartirildi', "data": user.format()})
+
+def delete_user_api(request, params):
+    user = request.user
+    print(user)
+    if user.phone != params['phone']:
+        user.delete()
+        return custom_response(True, message=MESSAGE['UserSuccessDeleted'])
+    return custom_response(False, message={'data': 'Ushbu raqam sizniki emas'})
