@@ -1,8 +1,11 @@
-
+from django.core.exceptions import ValidationError
 from rest_framework.authtoken.models import Token
 from authapp.models import CustomUser
 from methodism import custom_response, MESSAGE, error_messages
 from rest_framework.response import Response
+from django.contrib.auth.password_validation import validate_password       # (validate_password) metodi kerakli validatsiyalarni o'tkazib, qachoki password yaroqli bo'lsa True qaytaradi
+
+
 
 
 def register(request, params):
@@ -105,3 +108,23 @@ def delete_user_api(request, params):
         user.delete()
         return custom_response(True, message=MESSAGE['UserSuccessDeleted'])
     return custom_response(False, message={'data': 'Ushbu raqam sizniki emas'})
+
+
+def password_change_api(request, params):
+    if len(str(params['phone'])) != 12 or not isinstance(params['phone'], int) or str(params['phone'])[:3] != '998':
+        return custom_response(False, message={'Error': "Telefon xato"})
+
+    user = request.user
+    if user.check_password(params['old']):
+        try:
+            validate_password(params.get('new', ''))
+        except ValidationError:
+            return custom_response(False, message={'Error': 'Parol try blockni ichidagi validatsiyadan otmadi'})
+        except Exception:
+            return custom_response(False, message=MESSAGE['UndefinedError'])
+
+        user.set_password(params.get('new'))
+        user.save()
+        return custom_response(True, message=MESSAGE['PasswordChanged'])
+
+    return custom_response(False, message=MESSAGE["PasswordError"])

@@ -2,7 +2,6 @@ import datetime
 import random
 import string
 import uuid
-from wsgiref.util import request_uri
 
 from django.contrib.auth import authenticate
 from django.shortcuts import render
@@ -220,7 +219,7 @@ class PasswordChangeApiView(APIView):
 
         user = request.user
 
-        if user.check_password(data['old']):
+        if user.check_password(data['old']):        # ushbu blokda userni eski paroli va data['old'] solishtirilmoqda. Yani .chek_password bazadagi va data orqali kelayotgan parollarni solishtiradi
             try:
                 django_validate_password(data.get('new', ''))
             except ValidationError as e:
